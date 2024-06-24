@@ -3,6 +3,7 @@ import string
 hist = dict()
 sortable = []
 
+
 f = open("C:/Users/ruzze/source/repos/think-python/emma.txt")
 replace = string.punctuation+string.whitespace
 for line in f:
