@@ -1,6 +1,7 @@
 import sys
 import os
 import shelve
+import subprocess
 
 shelve_db = None 
 def opendb():
@@ -13,16 +14,16 @@ def walk_files(script, dir, *rest):
     verbose = "--verbose" in rest
     rehash = "--rehash" in rest
 
-
     if "--check" in sys.argv: 
         print(f"total files count: {str(len(shelve_db['files'].keys()))}")
         print(f"total checksums count: {str(len(shelve_db['checksums'].keys()))}")
-        print(shelve_db["files"].keys())
-        print(shelve_db["files"].get(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3"))
-        print(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3".replace("\\", "\\\\"))
+        # for i in sorted(shelve_db["files"].keys()):
+        #     print(i)
+        # print(shelve_db["files"].get(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3"))
+        # print(shelve_db["files"].get(u"D:/entertainment/music/Aria\Синглы\Дай руку мне.mp3"))
+        # print(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3")
         print("bye!")
         return 
-
 
     print(f"processing {dir}", " with rehash" if rehash else "")
     for root, dirname, files in os.walk(dir,True):
@@ -38,14 +39,18 @@ def walk_files(script, dir, *rest):
             # print(f"saved {(savedmtime, checksum)} vs real ({lastmtime})")
 
             if savedmtime < lastmtime or rehash:
-                print(f"calculating checksum {savedmtime} {lastmtime} {savedmtime < lastmtime} {rehash} {file}")
                 checksum = md5(file, "--debug" in rest)
+                print(f"calculated checksum {savedmtime} {lastmtime} {savedmtime < lastmtime} {rehash} {file} {checksum}")
                 
                 if verbose: print(f" -> {checksum}")
-                if checksum in shelve_db["checksums"]:
-                    shelve_db["checksums"][checksum].append(encoded_file)
+                if len(checksum)>0:
+                    if checksum in shelve_db["checksums"]:
+                        shelve_db["checksums"][checksum].append(encoded_file)
+                    else:
+                        shelve_db["checksums"][checksum] = [encoded_file]
                 else:
-                    shelve_db["checksums"][checksum] = [encoded_file]
+                    print(f"checksum is invalid {checksum} for {file}")
+                    continue
             else:
                 if verbose: print(f"-> picked saved checksum {(savedmtime,checksum)}")
 
@@ -67,12 +72,16 @@ def md5(file, debug=True):
     # result = []
     command = f"md5sum \"{file}\""
     if debug: print(command, end=" ")
-    with os.popen(command) as md5:
-        try:
-            result = md5.read()
-        except Exception as ex:
-            result = ''
-            if debug: print(f"!error: {ex}", end=" ")
+    # with os.popen(command) as md5:
+    output = subprocess.check_output(command)
+    try:
+        # result = md5.read()
+        result = output.decode("utf-8")
+    except Exception as ex:
+        result = ''
+        print(command)
+        raise
+        if debug: print(f"!error: {ex}", end=" ")
 
     if result.startswith("\\"):
         result = result[1:]

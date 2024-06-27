@@ -2,10 +2,16 @@ import os
 import pickle
 import shelve
 import math
+import subprocess
 
 # str = "test" if True else "not test"
 
 db = shelve.open("test.db", "c")
+
+out = subprocess.check_output("md5sum \"D:/entertainment/music/Aria\\1986 - С кем ты\\07-Икар.mp3\"")
+# out = subprocess.check_output("md5sum \"D:/temp/md5/IP96B-A7T_1121_B.pdf\"")
+print(out.decode("utf-8"))
+
 
 print(hash(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3"))
 print(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3".encode("utf-16le"))
