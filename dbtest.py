@@ -8,13 +8,24 @@ import subprocess
 
 db = shelve.open("test.db", "c")
 
-out = subprocess.check_output("md5sum \"D:/entertainment/music/Aria\\1986 - С кем ты\\07-Икар.mp3\"")
+# out = subprocess.check_output("md5sum \"D:/entertainment/music/Aria\\1986 - С кем ты\\07-Икар.mp3\"")
 # out = subprocess.check_output("md5sum \"D:/temp/md5/IP96B-A7T_1121_B.pdf\"")
-print(out.decode("utf-8"))
+# out = subprocess.check_output("certutil -hashfile MD5 \"D:/temp/md5/IP96B-A7T_1121_B.pdf\"")
+out = subprocess.check_output("certutil -hashfile \"d:/entertainment/music/Aria/Синглы/Дай руку мне.mp3\" MD5")
+# "dag".st
+
+print("%-20s|%20s" % ('foo', 'bar'))
+print(os.path.splitdrive("d:/entertainment/music/Aria/Синглы/Дай руку мне.mp3"))
+
+print(out.decode("utf-8", errors="replace"))
+print(out)
+os.path.abspath
 
 
 print(hash(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3"))
 print(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3".encode("utf-16le"))
+
+
 
 try:
     # pickle.dumps/pickle.loads
