@@ -2,11 +2,12 @@ import sys
 import os
 import shelve
 import subprocess
+import dbm
 
 shelve_db = None 
 def opendb():
     global shelve_db
-    shelve_db = shelve.open("checksums.db", "c", writeback=True)
+    shelve_db = shelve.open("checksums.db", "c", writeback=True,)
 
 def walk_files(script, dir, *rest):
     global shelve_db
@@ -15,8 +16,12 @@ def walk_files(script, dir, *rest):
     rehash = "--rehash" in rest
 
     if "--check" in sys.argv: 
+        print(f"type of the disk database: {dbm.whichdb('checksums.db')}")
+        
         print(f"total files count: {str(len(shelve_db['files'].keys()))}")
         print(f"total checksums count: {str(len(shelve_db['checksums'].keys()))}")
+        print(f"total files in checksums: {sum([len(v) for k,v in shelve_db['checksums'].items()])}")
+        print(f"total duplicates: {len(shelve_db['files'].keys()) - len(shelve_db['checksums'].keys())}")
         # for i in sorted(shelve_db["files"].keys()):
         #     print(i)
         # print(shelve_db["files"].get(u"D:/entertainment/music/Aria\Легенды русского рока\Игра с огнем.mp3"))
@@ -73,15 +78,15 @@ def md5(file, debug=True):
     command = f"md5sum \"{file}\""
     if debug: print(command, end=" ")
     # with os.popen(command) as md5:
-    output = subprocess.check_output(command)
     try:
+        output = subprocess.check_output(command)
         # result = md5.read()
         result = output.decode("utf-8")
     except Exception as ex:
         result = ''
-        print(command)
-        raise
-        if debug: print(f"!error: {ex}", end=" ")
+        # if debug: print(command)
+        # raise
+        if debug: print(f"!error: {command} {ex}", end=" ")
 
     if result.startswith("\\"):
         result = result[1:]
