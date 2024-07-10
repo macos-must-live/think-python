@@ -4,8 +4,12 @@ import shelve
 import subprocess
 import dbm
 from shutil import which
+import logging
 
 shelve_db = None 
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="md5checksum.log", level=logging.INFO)
 
 def normalize_path(path):
     disk, rel = os.path.splitdrive(path)
@@ -13,6 +17,16 @@ def normalize_path(path):
 
 def is_md5sum_available():
     return which("md5sum") is not None
+def is_certutil_available():
+    return which("certutil") is not None
+
+def log(message, verbose=False):
+    logger.info(message)
+    if verbose: print(message)
+
+def logError(ex):
+    logger.error(ex)
+    print(f"!!!error: {ex}")
 
 def walk_files(script, dir='.', *rest):
     global shelve_db
@@ -45,7 +59,8 @@ def walk_files(script, dir='.', *rest):
                 file = normalize_path(os.path.join(root,f))
                 encoded_file = file
 
-                if verbose: print(f"{file}", end=" ")
+                # if verbose: print(f"{file}", end=" ")
+                log(f"{file}", verbose)
                 lastmtime = os.path.getmtime(file)
                 savedmtime,checksum = files_dict.get(encoded_file, (0, ''))
 
@@ -55,7 +70,8 @@ def walk_files(script, dir='.', *rest):
                     checksum = md5(file, "--debug" in rest)
                     print(f"calculated checksum {savedmtime} {lastmtime} {savedmtime < lastmtime} {rehash} {file} {checksum}")
                     
-                    if verbose: print(f" -> {checksum}")
+                    # if verbose: print(f" -> {checksum}")
+                    log(f" -> {checksum}", verbose)
                     if len(checksum)>0:
                         if checksum in checksums_dict:
                             if encoded_file not in checksums_dict[checksum]:
@@ -66,7 +82,8 @@ def walk_files(script, dir='.', *rest):
                         print(f"checksum is invalid {checksum} for {file}")
                         continue
                 else:
-                    if verbose: print(f"-> picked saved checksum {(savedmtime,checksum)}")
+                    # if verbose: print(f"-> picked saved checksum {(savedmtime,checksum)}")
+                    log(f"-> picked saved checksum {(savedmtime,checksum)}", verbose=verbose)
 
                 if len(checksum)>0 and encoded_file not in files_dict: 
                     files_dict[encoded_file] = (lastmtime, checksum)
@@ -89,7 +106,8 @@ def walk_files(script, dir='.', *rest):
     for k,v in duplicates.items():
         print(f"{k}:")
         for file in v:
-            print(f"-{file}".rjust(100))
+            # print(f"-{file}".rjust(100))
+            print(f"-{file:>120}")
 
 def process_open(command, debug=True):
     if debug: print(command, end=" ")
@@ -100,7 +118,8 @@ def process_open(command, debug=True):
         result = ''
         # if debug: print(command)
         # raise
-        if debug: print(f"!error: {command} {ex}", end=" ")
+        # if debug: print(f"!error: {command} {ex}", end=" ")
+        logError(ex)
     return result 
     
 def md5sum(file, debug=True):
@@ -125,8 +144,10 @@ def certutil(file, debug=True):
 def md5(file, debug=True):
     if is_md5sum_available():
         return md5sum(file, debug)
-    else:
+    elif is_certutil_available():
         return certutil(file, debug)
+    else:
+        raise ValueError("No md5 checksum software supported")
 
 def load_cache(file = "cache.db"):
     with shelve.open(file, "c") as db:
