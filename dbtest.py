@@ -8,6 +8,23 @@ import urllib
 import urllib.request
 import bisect
 import heapq
+import glob
+from string import Template
+
+s = Template('$who likes $what')
+print(s.substitute(who='tim', what='kung pao'))
+
+token_specification = [
+    ('NUMBER',   r'\d+(\.\d*)?'),  # Integer or decimal number
+    ('ASSIGN',   r':='),           # Assignment operator
+    ('END',      r';'),            # Statement terminator
+    ('ID',       r'[A-Za-z]+'),    # Identifiers
+    ('OP',       r'[+\-*/]'),      # Arithmetic operators
+    ('NEWLINE',  r'\n'),           # Line endings
+    ('SKIP',     r'[ \t]+'),       # Skip over spaces and tabs
+    ('MISMATCH', r'.'),            # Any other character
+]
+print('|'.join('(?P<%s>%s)' % pair for pair in token_specification))
 
 # str = "test" if True else "not test"
 # bisect.
@@ -16,6 +33,8 @@ heapq.heapify(unsorted)
 print(unsorted)
 
 print(b"\x01\x02")
+
+# glob.iglob
 
 # re.findall
 
