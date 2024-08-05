@@ -22,8 +22,8 @@ import doctest
 def walkdeps(d, inp: dict, stack: deque, visited: set):
     for k in inp[d]:
         if k not in visited:
-            walkdeps(k, inp, stack, visited)
             visited.add(k)
+            walkdeps(k, inp, stack, visited)
 
     if d not in stack:
         stack.append(d)

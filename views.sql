@@ -4484,95 +4484,6 @@ if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[view_VIEWS
 drop view [dbo].[view_VIEWS]
 GO
 
-/*
-setuser
-GO
-
-EXEC sp_bindefault N'[dbo].[YesValue]', N'[tblDealers].[banking_auth]'
-GO
-
-setuser
-GO
-
-setuser
-GO
-
-EXEC sp_bindefault N'[dbo].[YesValue]', N'[tblLendersBranchWireInfo].[Active]'
-GO
-
-EXEC sp_bindefault N'[dbo].[CurrentDateTIme]', N'[tblLendersBranchWireInfo].[CreateDateTime]'
-GO
-
-EXEC sp_bindefault N'[dbo].[CurrentDateTIme]', N'[tblLendersBranchWireInfo].[UpdateDateTime]'
-GO
-
-setuser
-GO
-
-setuser
-GO
-
-EXEC sp_bindefault N'[dbo].[CurrentDateTIme]', N'[tblLenderStipulations].[CreateDateTime]'
-GO
-
-EXEC sp_bindefault N'[dbo].[CurrentDateTIme]', N'[tblLenderStipulations].[UpdateDateTime]'
-GO
-
-setuser
-GO
-
-setuser
-GO
-
-EXEC sp_bindefault N'[dbo].[YesValue]', N'[tblDealersBankingProfiles].[active]'
-GO
-
-EXEC sp_bindefault N'[dbo].[OneValue]', N'[tblDealersBankingProfiles].[bank_account_status_id]'
-GO
-
-EXEC sp_bindefault N'[dbo].[NoValue]', N'[tblDealersBankingProfiles].[bank_have_auth]'
-GO
-
-EXEC sp_bindefault N'[dbo].[NoValue]', N'[tblDealersBankingProfiles].[cc_auto_bill]'
-GO
-
-EXEC sp_bindefault N'[dbo].[ZeroValue]', N'[tblDealersBankingProfiles].[credit_card_type]'
-GO
-
-EXEC sp_bindefault N'[dbo].[CurrentDateTIme]', N'[tblDealersBankingProfiles].[dt_added]'
-GO
-
-EXEC sp_bindefault N'[dbo].[CurrentDateTIme]', N'[tblDealersBankingProfiles].[dt_edited]'
-GO
-
-EXEC sp_bindefault N'[dbo].[System]', N'[tblDealersBankingProfiles].[user_added]'
-GO
-
-EXEC sp_bindefault N'[dbo].[User]', N'[tblDealersBankingProfiles].[user_edited]'
-GO
-
-setuser
-GO
-
-setuser
-GO
-
-EXEC sp_bindefault N'[dbo].[YesValue]', N'[tblDealersBilling].[active]'
-GO
-
-setuser
-GO
-
-setuser
-GO
-
-EXEC sp_bindefault N'[dbo].[NoValue]', N'[tblDealersLogins].[banking_auth]'
-GO
-
-setuser
-GO
-
-*/
 
 SET QUOTED_IDENTIFIER ON 
 GO
@@ -4863,6 +4774,55 @@ SET ANSI_NULLS ON
 GO
 
 
+SET QUOTED_IDENTIFIER ON 
+GO
+SET ANSI_NULLS ON 
+GO
+
+/****** Object:  View dbo.viewDealers_PossibleActives    Script Date: 7/31/2024 12:57:17 PM ******/
+
+CREATE VIEW viewDealers_PossibleActives AS
+	SELECT TOP 100 PERCENT
+		DealerID,
+		DealerName,
+		City,
+		State
+	FROM
+		tblDealers	DEALER	WITH (NOLOCK)
+	WHERE
+		
+			EXISTS (
+				SELECT 
+					* 
+				FROM 
+					tblLoanApps 				APPS 		WITH (NOLOCK) 
+				WHERE 
+						APPS.DealerID=DEALER.DealerID 
+					AND	APPS.CreateDateTime > DATEADD(dd, -365, GETDATE())
+			) OR EXISTS (
+				SELECT 
+					* 
+				FROM 
+					tblPartnerDataElement 		PDE 		WITH (NOLOCK) 
+				WHERE 
+							PDE.DealerID 	= DEALER.DealerID 
+					AND 	Field 			IN('Enabled', 'Dealer Enabled', 'Dealer Enabled (CreditSmarts)', 'Dealer Enabled (Lender)')
+					AND 	DataValue 		IN ('T', '1', '-1', 'Y', 'YES')
+			)
+		ORDER BY
+			Dealer.DealerName,
+			Dealer.DealerID,
+			Dealer.State,
+			Dealer.City
+
+
+
+GO
+
+SET QUOTED_IDENTIFIER OFF 
+GO
+SET ANSI_NULLS ON 
+GO
 
 SET QUOTED_IDENTIFIER ON 
 GO
@@ -5175,12 +5135,12 @@ ORDER BY
 
 
 
-GO
 
 
-SET QUOTED_IDENTIFIER OFF
-GO
-SET ANSI_NULLS ON
+
+--SET QUOTED_IDENTIFIER OFF
+
+--SET ANSI_NULLS ON
 
 
 
@@ -6790,34 +6750,7 @@ GO
 SET ANSI_NULLS ON 
 GO
 
-/*
 
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
-GO
-
-/****** Object:  View dbo.viewBidsPartnerTool_test    Script Date: 7/31/2024 12:57:15 PM ******/
-
-
-CREATE VIEW viewBidsPartnerTool_test AS
-	SELECT
-		LoanAppID			= PARTNER.LoanAppID,
-		LoanApp_BidID			= PARTNER.LoanApp_BidID,
-		PartnerToolID			= PARTNER.PartnerToolID,
-		PartnerName				= ISNULL(PARTNER.ShortName, ''),
-		PartnerDisplay			= ISNULL(PARTNER.DisplayName, ''),
-		PartnerLoanIdentifier	= ISNULL(PartnerLoanIdentifier, '')
-	FROM
-						--		tblLoanApp_Bids			BID			WITH (NOLOCK)
---		LEFT	OUTER	JOIN	viewLoanPartner			PARTNER		WITH (NOLOCK) ON (PARTNER.LoanAppID = BID.LoanAppID)
-		viewLoanPartner_test			PARTNER		WITH (NOLOCK)
-
-
-
-*/
-
-GO
 
 SET QUOTED_IDENTIFIER OFF 
 GO
@@ -9703,7 +9636,7 @@ SELECT
 
 FROM
 	tblFreeForm F WITH (NOLOCK)
-	JOIN tblFreeFormValues FV WITH (NOLOCK) ON F.FreeFormID = FV.FreeFormID
+	INNER JOIN tblFreeFormValues FV WITH (NOLOCK) ON F.FreeFormID = FV.FreeFormID
 	--tblFreeFormValues FV
 	--tblDealers D,
 	--tblLenders L,
@@ -9772,7 +9705,7 @@ SELECT
 	FV.EntryValue
 
 FROM
-	tblFreeForm FF
+	tblFreeForm FF WITH (NOLOCK)
 	LEFT OUTER JOIN tblFreeFormValues FV WITH (NOLOCK) ON FF.FreeFormID = FV.FreeFormID
 	--tblFreeFormValues FV
 
@@ -10209,68 +10142,7 @@ GO
 SET ANSI_NULLS ON 
 GO
 
-/*
-SET QUOTED_IDENTIFIER ON 
-GO
-SET ANSI_NULLS ON 
-GO
 
-/****** Object:  View dbo.SCHEMA_COLUMNS    Script Date: 7/31/2024 12:57:15 PM ******/
-
-CREATE VIEW Schema_Columns AS
-	SELECT TOP 100 PERCENT
-		[Database]		= TABLES.TABLE_CATALOG,
-		[Owner]			= TABLES.TABLE_SCHEMA,
-		[TableName]		= TABLES.TABLE_NAME,
-		[IsView]		= CONVERT(BIT, CASE TABLES.TABLE_TYPE WHEN 'VIEW' THEN 1 ELSE 0 END),
-		[Columns]		= (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS C2 WITH (NOLOCK) WHERE C2.TABLE_NAME = TABLES.TABLE_NAME),
-		[Ordinal]		= COLUMNS.ORDINAL_POSITION,
-		[ColumnName]	= COLUMNS.COLUMN_NAME,
-		[DataType]		= CASE 
-							WHEN DATA_TYPE IN('int')										THEN 'INTEGER'
-							WHEN DATA_TYPE IN('VARCHAR', 'CHAR', 'NVARCHAR', 'NCHAR')		THEN UPPER(COLUMNS.DATA_TYPE) + '(' + CONVERT(VARCHAR(8), COLUMNS.CHARACTER_MAXIMUM_LENGTH) + ')'
-							WHEN DATA_TYPE IN('DECIMAL', 'NUMERIC')							THEN UPPER(COLUMNS.DATA_TYPE) + '(' + CONVERT(VARCHAR(8), COLUMNS.NUMERIC_PRECISION) + ',' + CONVERT(VARCHAR(8), COLUMNS.NUMERIC_SCALE) + ')'
-							ELSE UPPER(COLUMNS.DATA_TYPE) END,
-		Nullable		= CONVERT(BIT, CASE IS_NULLABLE WHEN 'YES' THEN 1 ELSE 0 END),
-	
-		--X = ISNUMERIC(COLUMNS.COLUMN_DEFAULT), COLUMNS.COLUMN_DEFAULT,
-
-			
-		DefaultValue	= CASE 
-			WHEN COLUMNS.COLUMN_DEFAULT				IS	NULL			THEN NULL
-			WHEN DVC.DefaultValue					IS	NOT NULL		THEN DVC.DefaultValue
-			WHEN LEFT(COLUMNS.COLUMN_DEFAULT, 1) = '(' AND RIGHT(COLUMNS.COLUMN_DEFAULT, 1) = ')' AND ISNUMERIC(SUBSTRING(COLUMNS.COLUMN_DEFAULT, 2, LEN(COLUMNS.COLUMN_DEFAULT) - 2)) = 1	THEN SUBSTRING(COLUMNS.COLUMN_DEFAULT, 2, LEN(COLUMNS.COLUMN_DEFAULT) - 2)
-			WHEN ISNUMERIC(COLUMNS.COLUMN_DEFAULT)	= 1																																		THEN COLUMNS.COLUMN_DEFAULT
-			ELSE DBO.schema_TidyDefaultValue(COLUMNS.COLUMN_DEFAULT) END
-
-							/*WHEN COLUMNS.COLUMN_DEFAULT		IS NULL																																			THEN '' 
-							WHEN COLUMNS.COLUMN_DEFAULT 	IN	('GETDATE()', '(GETDATE())')																												THEN 'GETDATE()'
-							WHEN COLUMNS.COLUMN_DEFAULT 	IN	('NEWID()', '(NEWID())')																													THEN 'NEWID()'
-							WHEN COLUMNS.COLUMN_DEFAULT 	IN	('HOST_NAME()', '(HOST_NAME())')																											THEN 'HOST_NAME()'
-							WHEN COLUMNS.COLUMN_DEFAULT 	IN	('''''', '('''')')																															THEN ''''''
-							WHEN COLUMNS.COLUMN_DEFAULT		IN	('(0)', '(1)', '(''NONE'')', '(''SYSTEM:B2B'')', '(''SERVER'')', '(''ANONYMOUS'')', '(''SYSTEM'')', '(''(UNDEFINED)'')', '(''UPDATE'')')	THEN SUBSTRING(COLUMNS.COLUMN_DEFAULT, 2, LEN(COLUMNS.COLUMN_DEFAULT) - 2)
-							WHEN CHARINDEX('(', COLUMNS.COLUMN_DEFAULT) = 0 AND CHARINDEX('@', COLUMNS.COLUMN_DEFAULT) = 0																					THEN COLUMNS.COLUMN_DEFAULT
-							WHEN LEFT(COLUMNS.COLUMN_DEFAULT, 1) = '(' AND RIGHT(COLUMNS.COLUMN_DEFAULT, 1) = ')' AND ISNUMERIC(SUBSTRING(COLUMNS.COLUMN_DEFAULT, 2, LEN(COLUMNS.COLUMN_DEFAULT) - 2)) = 1	THEN SUBSTRING(COLUMNS.COLUMN_DEFAULT, 2, LEN(COLUMNS.COLUMN_DEFAULT) - 2)
-							WHEN ISNUMERIC(COLUMNS.COLUMN_DEFAULT)	= 1																																		THEN COLUMN_DEFAULT
-							ELSE DBO.schema_TidyDefaultValue(COLUMNS.COLUMN_DEFAULT) END*/
-	
-				FROM
-							INFORMATION_SCHEMA.TABLES												TABLES		WITH (NOLOCK)
-					 JOIN	INFORMATION_SCHEMA.COLUMNS												COLUMNS		WITH (NOLOCK) ON COLUMNS.TABLE_NAME = TABLES.TABLE_NAME	
-					 JOIN	CreditSmarts_Testing.DBO.tblSystem_Schema_ObjectType_SortOrder			TYPE_SORT	WITH (NOLOCK) ON TYPE_SORT.OBJECT_TYPE = TABLES.TABLE_TYPE
-				LEFT JOIN	CreditSmarts_Testing.DBO.tblSystem_Schema_ObjectNamePrefix_SortOrder	NAME_SORT	WITH (NOLOCK) ON NAME_SORT.OBJECT_TYPE = TABLES.TABLE_TYPE AND LEFT(TABLES.TABLE_NAME, NAME_SORT.PREFIX_LENGTH) = NAME_SORT.NAME_PREFIX
-				LEFT JOIN	CreditSmarts_Testing.DBO.tblSystem_Schema_DefaultValueCache				DVC			WITH (NOLOCK) ON DVC.COLUMN_DEFAULT = COLUMNS.COLUMN_DEFAULT
-
-		WHERE NAME_SORT.SORT_SEQUENCE IS NOT NULL
-	ORDER BY
-		ISNULL(TYPE_SORT.SORT_SEQUENCE, 2147483647),
-		ISNULL(NAME_SORT.SORT_SEQUENCE, 2147483647),
-		TABLES.TABLE_NAME,
-		COLUMNS.ORDINAL_POSITION
-
-
-
-*/
 GO
 
 SET QUOTED_IDENTIFIER OFF 
@@ -11229,64 +11101,6 @@ SET ANSI_NULLS ON
 GO
 
 /****** Object:  View dbo.TEMP_ERIK_PDE_SCORE_Outer    Script Date: 7/31/2024 12:57:15 PM ******/
--- DECLARE @D DATETIME; SET @D = GETDATE();
--- SET ROWCOUNT 100; SELECT * FROM TEMP_ERIK_PDE_SCORE_Inner WITH (NOLOCK);
-
---
-	-- SET ROWCOUNT 100;
-/*ALTER VIEW TEMP_ERIK_PDE_SCORE_Inner AS
-	SELECT
-		[PartnerDataElementID]	= [PDE].[PartnerDataElementID],
-		[PartnerToolID]					= NULLIF([PDE].[PartnerToolID],		0),
-		[LoanAppID]							= CASE WHEN [PDE].[LoanAppID]				> 0 THEN [PDE].[LoanAppID]				WHEN [Bid_App].[LoanAppID]				IS NOT NULL THEN [Bid_App].[LoanAppID]				ELSE [Bid_Bid].[LoanAppID]				END,
-		[LoanApp_BidID]					= CASE WHEN [PDE].[LoanApp_BidID]		> 0 THEN [PDE].[LoanApp_BidID]		WHEN [Bid_Bid].[LoanApp_BidID]		IS NOT NULL THEN [Bid_Bid].[LoanApp_BidID]		ELSE [Bid_App].[LoanApp_BidID]		END,
-		[LendersBranchID]				= CASE WHEN [PDE].[LendersBranchID]	> 0 THEN [PDE].[LendersBranchID]	WHEN [Bid_Bid].[LendersBranchID]	IS NOT NULL THEN [Bid_Bid].[LendersBranchID]	ELSE [Bid_App].[LendersBranchID]	END,
-		[LenderID]							= CASE WHEN [PDE].[LenderID] 				> 0 THEN [PDE].[LenderID]																																													ELSE [Branch].[LenderID]					END,
-		[DealerID]							= CASE WHEN [PDE].[DealerID] 				> 0 THEN [PDE].[DealerID]																																													ELSE [App].[DealerID]							END,
-		[Field]									= [PDE].[Field],
-		[Value]									= ISNULL(NULLIF(RTRIM([PDE].[DataValue]), ''), [PED].[Value]),
-		[Score]									= CASE WHEN [PDE].[LoanApp_BidID] <> 0 THEN 90 WHEN [PDE].[LoanAppID] <> 0 THEN 30 ELSE 0 END + CASE WHEN [PDE].[LendersBranchID] <> 0 THEN 50 WHEN [PDE].[LenderID] <> 0 THEN 20 ELSE 0 END + CASE WHEN [PDE].[DealerID] <> 0 THEN 10 ELSE 0 END + CASE WHEN [PDE].[PartnerToolID] <> 0 THEN 5 ELSE 0 END,
-		[LinkedByLoan]					= CONVERT(BIT, CASE WHEN [PDE].[LoanApp_BidID]		<> 0 THEN 1 WHEN [PDE].[LoanAppID]	<> 0 THEN 1 ELSE 0 END),
-		[LinkedByBid]						= CONVERT(BIT, CASE WHEN [PDE].[LoanApp_BidID]		<> 0 THEN 1 ELSE 0 END),
-		-- [LinkedByApp]						= CONVERT(BIT, CASE WHEN [PDE].[LoanAppID]				<> 0 THEN 1 ELSE 0 END),
-		[LinkedByLender]				= CONVERT(BIT, CASE WHEN [PDE].[LendersBranchID]	<> 0 THEN 1 WHEN [PDE].[LenderID] <> 0 THEN 1 ELSE 0 END),
-		[LinkedByBranch]				= CONVERT(BIT, CASE WHEN [PDE].[LendersBranchID]	<> 0 THEN 1 ELSE 0 END),
-		-- [LinkedByLender]				= CONVERT(BIT, CASE WHEN [PDE].[LenderID]					<> 0 THEN 1 ELSE 0 END),
-		[LinkedByDealer]				= CONVERT(BIT, CASE WHEN [PDE].[DealerID]					<> 0 THEN 1 ELSE 0 END),
-		[CreateDateTime]								= [PDE].[CreateDateTime],
-		[CreateUser]										= [PDE].[CreateUser],
-		[UpdateDateTime]								= [PDE].[UpdateDateTime],
-		[UpdateUser]										= [PDE].[UpdateUser],
-		[RowVersion]										= ISNULL(NULLIF([PDE].[RowVersion], 0), 1),
-
-		[PartnerElementDefinitionID]	= [PED].[PartnerElementDefinitionID],
-		[ValueType]										= ISNULL([PED].[ValueType],											'OTHER'),
-		-- [Value]												= ISNULL([PED].[Value],													''),
-		[isPartnerLenderID]						= ISNULL([PED].[isPartnerLenderID],							0),
-		[isPartnerLoanID]							= ISNULL([PED].[isPartnerLoanID],								0),
-		[isPartnerDealerID]						= ISNULL([PED].[isPartnerDealerID],							0),
-		[KeyedFromLoan]								= ISNULL([PED].[KeyedFromLoan],							CASE WHEN [PDE].[LoanApp_BidID]			<> 0 OR [PDE].[LoanAppID]	<> 0 THEN 1 ELSE 0 END),
-		[KeyedFromLender]							= ISNULL([PED].[KeyedFromLender],  					CASE WHEN [PDE].[LendersBranchID]		<> 0 OR [PDE].[LenderID]	<> 0 THEN 1 ELSE 0 END),
-		[KeyedFromLoanAppID]					= ISNULL([PED].[KeyedFromLoanAppID],				CASE WHEN [PDE].[LoanAppID]					<> 0 THEN 1 ELSE 0 END),
-		[KeyedFromLoanApp_BidID]			= ISNULL([PED].[KeyedFromLoanApp_BidID],		CASE WHEN [PDE].[LoanApp_BidID]			<> 0 THEN 1 ELSE 0 END),
-		[KeyedFromLenderID]						= ISNULL([PED].[KeyedFromLenderID],					CASE WHEN [PDE].[LenderID]					<> 0 THEN 1 ELSE 0 END),
-		[KeyedFromLendersBranchID]		= ISNULL([PED].[KeyedFromLendersBranchID],	CASE WHEN [PDE].[LendersBranchID]		<> 0 THEN 1 ELSE 0 END),
-		[KeyedFromDealerID]						= ISNULL([PED].[KeyedFromDealerID],					CASE WHEN [PDE].[DealerID]					<> 0 THEN 1 ELSE 0 END)
-	FROM
-								[tblPartnerDataElement]						[PDE]					WITH	(NOLOCK)
-		LEFT	JOIN	[viewPartnerFieldDefinitions]			[PED]					WITH	(NOLOCK)	ON	[PED].[PartnerToolID]				 = [PDE].[PartnerToolID]				AND	[PED].[Field] = [PDE].[Field]
-		LEFT	JOIN	[tblLoanApp_Bids]									[Bid_App]			WITH	(NOLOCK)	ON	[PDE].[LoanAppID]						<> 0	AND [Bid_App].[LoanAppID] 		= [PDE].[LoanAppID] --				<> 0	THEN [PDE].[LoanAppID]		WHEN  AND	[PDE].[LoanApp_BidID]			 = 0	AND [Bid_App].[LoanAppID]	 		= [PDE].[LoanAppID]
-		LEFT	JOIN	[tblLoanApp_Bids]									[Bid_Bid]			WITH	(NOLOCK)	ON	[PDE].[LoanApp_BidID]				<> 0	AND [Bid_Bid].[LoanApp_BidID]	= [PDE].[LoanApp_BidID]
-		LEFT	JOIN	[tblLendersBranches]							[Branch]			WITH	(NOLOCK)	ON	[Branch].[LendersBranchID]	 = CASE WHEN [PDE].[LendersBranchID]	<> 0 THEN [PDE].[LendersBranchID] WHEN [Bid_Bid].[LendersBranchID] IS NOT NULL THEN [Bid_Bid].[LendersBranchID] ELSE [Bid_App].[LendersBranchID] END
-		LEFT	JOIN	[tblLoanApps]											[App]					WITH	(NOLOCK)	ON	[App].[LoanAppID]						 = CASE WHEN [PDE].[LoanAppID]				<> 0	THEN [PDE].[LoanAppID] ELSE ISNULL([Bid_App].[LoanAppID], [Bid_Bid].[LoanAppID]) END
-	WHERE
-		[PDE].[Field] NOT IN ('Dealer Enabled (CreditSmarts)', 'Dealer Enabled (Lender)', 'Activation Policy') AND ([PDE].[LoanApp_BidID] > 0 OR [PDE].[LoanAppID] > 0 OR [PDE].[LendersBranchID] > 0)
---xx\go -l
---PartnerDataElementID | PartnerToolID |   LoanAppID | LoanApp_BidID | LendersBranchID |    LenderID |    DealerID | Field                            | Value                            |       Score
---x\quit
---SELECT [X] = 'TEST';
-*/
-
 --SET ROWCOUNT 200;
 
 CREATE VIEW TEMP_ERIK_PDE_SCORE_Outer AS
@@ -16634,7 +16448,7 @@ CREATE VIEW [viewB2B_EMail_Notification_Pending_test] as
 --TOP 100 PERCENT
 		PartnerToolID					= PDE_EMailFlag.PartnerToolID,
 		LoanAppID						= Bid.LoanAppID,
-		LoanApp_BidID					= MIN(Bid.LoanApp_BidID),
+		LoanApp_BidID					= Min(Bid.LoanApp_BidID),
 		[To:]							= Branch.Notification_Email,
 		[Subject:]						= 'New ' + REPLACE(REPLACE(Partner.ShortName, 'DEALERTRACK', 'DealerTrack'), 'ROUTEONE', 'RouteOne') + ' Loan Received! (' + PDE_LoanID.Field + ': '  + PDE_LoanID.DataValue + ')',
 		[Content: Originator]			= REPLACE(REPLACE(Partner.ShortName, 'DEALERTRACK', 'DealerTrack'), 'ROUTEONE', 'RouteOne'),
@@ -16708,7 +16522,7 @@ CREATE VIEW [viewB2B_EMail_Notification_Pending_test] as
 		Bid.CreateDateTime,
 		EMail.DataValue
 
-	ORDER BY APP.LOANAPPID, BID.LOANAPP_BIDID
+	ORDER BY Bid.LOANAPPID--, Bid.LOANAPP_BIDID
 
 
 GO
@@ -18084,22 +17898,6 @@ SET ANSI_NULLS ON
 GO
 
 /****** Object:  View dbo.viewB2B_OriginalPartnerBid    Script Date: 7/31/2024 12:57:16 PM ******/
-/*
-CREATE VIEW viewB2B_OriginalPartnerBid_Inner AS	
-	SELECT
-		LoanAppID									= Bid.LoanAppID,
-		LenderID									= Branch.LenderID,
-		PartnerToolID							= [PDE].[PartnerToolID],
-		LoanApp_BidID_Original		= MIN(Bid.LoanApp_BidID)
-	FROM 
-						[tblLoanApp_Bids]									[Bid]				WITH (NOLOCK) 
-			JOIN	[tblLendersBranches]							[Branch]		WITH (NOLOCK) ON [Bid].[LendersBranchID]		= [Branch].[LendersBranchID]
-			JOIN	[tblPartnerDataElement]						[PDE]				WITH (NOLOCK) ON [PDE].[LoanApp_BidID]			= [Bid].[LoanApp_BidID]
-	GROUP BY
-		[Bid].[LoanAppID],
-		[PDE].[PartnerToolID],
-		[Branch].[LenderID]
-*/
 
 CREATE VIEW viewB2B_OriginalPartnerBid AS	
 	SELECT
@@ -18146,22 +17944,6 @@ CREATE  VIEW viewB2B_OriginalPartnerBid_Inner AS
 		[Branch].[LenderID]
 
 
-/*
-
-ALTER VIEW viewB2B_OriginalPartnerBid AS	
-	SELECT
-		LoanAppID									= Bid.LoanAppID,
-		LenderID									= Branch.LenderID,
-		PartnerToolID							= [PDE].[PartnerToolID],
-		LoanApp_BidID_Original		= MIN(Bid.LoanApp_BidID)
-				[Partner].[ShortName],
-
-		Partner										= [Partner].[ShortName],
-						[tblLoanApp_Bids]									[Bid]				WITH (NOLOCK) 
-			JOIN	[]
-			JOIN	[tblPartnerTools]									[Partner]		WITH (NOLOCK) ON [Partner].[PartnerToolID]	= [PDE].[PartnerToolID]
-
-*/
 
 GO
 
@@ -19228,14 +19010,6 @@ SET ANSI_NULLS ON
 GO
 
 /****** Object:  View dbo.viewB2B_PartnerStatInit_Inner    Script Date: 7/31/2024 12:57:16 PM ******/
---ALTER  VIEW [dbo].[viewB2B_PartnerStatInit] AS
-
-/*	SELECT TOP 100 PERCENT
-	  D.*,
-	  TRIGGER_SEND.XML
-	FROM
-		(SELECT DISTINCT*/
-
 CREATE VIEW viewB2B_PartnerStatInit_Inner AS
 	SELECT
 			P.Active,
@@ -19948,7 +19722,7 @@ SET ANSI_NULLS ON
 GO
 
 /****** Object:  View dbo.viewBidDecisionStatus_Outer    Script Date: 7/31/2024 12:57:16 PM ******/
-/* ALTER */ CREATE VIEW [viewBidDecisionStatus_Outer] AS
+CREATE VIEW [viewBidDecisionStatus_Outer] AS
 	SELECT --TOP 500
 		[LoanAppID]					= [Bid].[LoanAppID],
 		[LoanApp_BidID]			= [Bid].[LoanApp_BidID],
@@ -21480,9 +21254,40 @@ CREATE VIEW [dbo].[viewBranchLogins_Search] AS
 SELECT TOP 100 PERCENT
  tblLenders.LenderID,
  tblLenders.LenderName,
- tblLendersBranchLogins.*,
-  tblLendersBranches.BranchName AS Name,
-  ISNULL(tblLendersBranches.LoginPrefix, '') AS LoginPrefix,
+ --tblLendersBranchLogins.*,
+
+ tblLendersBranchLogins.[LendersBranchLoginID],
+ tblLendersBranchLogins.[Description],
+ tblLendersBranchLogins.[FullName],
+ tblLendersBranchLogins.[LendersBranchID],
+ tblLendersBranchLogins.[Password],
+ tblLendersBranchLogins.[UserName],
+ tblLendersBranchLogins.[CreateDateTime],
+ tblLendersBranchLogins.[UpdateDateTime],
+ tblLendersBranchLogins.[CreateUser],
+ tblLendersBranchLogins.[UpdateUser],
+ tblLendersBranchLogins.[rowVersion],
+ tblLendersBranchLogins.[SECURE_MAKE_BID],
+ tblLendersBranchLogins.[SECURE_PULL_CREDIT],
+ tblLendersBranchLogins.[SECURE_CHANGE_OWN_PASSWORD],
+ tblLendersBranchLogins.[SECURE_CHANGE_LOGINS],
+ tblLendersBranchLogins.[SECURE_CHANGE_DOCUMENTS],
+ tblLendersBranchLogins.[SECURE_CHANGE_LOAN_PROGRAMS],
+ tblLendersBranchLogins.[LastPasswordDateTime],
+ tblLendersBranchLogins.[Status],
+ tblLendersBranchLogins.[employee_number],
+ tblLendersBranchLogins.[EMail] as BranchLoginEmail,
+ tblLendersBranchLogins.[SECURE_CAN_MAKE_BID],
+ tblLendersBranchLogins.[SECURE_CAN_FUND_LOAN],
+ tblLendersBranchLogins.[SECURE_CAN_UNDERWRITE],
+ tblLendersBranchLogins.[SECURE_CAN_TRANSFER_FUNDS],
+ tblLendersBranchLogins.[CellPhone],
+ tblLendersBranchLogins.[OfficePhone],
+ tblLendersBranchLogins.[SECURE_SEARCH_REPORTING],
+ tblLendersBranchLogins.[SECURE_REPORTING_EXPORT],
+
+ tblLendersBranches.BranchName AS Name,
+ ISNULL(tblLendersBranches.LoginPrefix, '') AS LoginPrefix,
  tblLendersBranches.Phone AS Telephone,
  tblLendersBranches.Fax,
  tblLendersBranches.CITY,
@@ -23118,14 +22923,15 @@ SELECT
 
 FROM
 	tblFreeForm F WITH (NOLOCK)
-	tblFreeFormValues FV WITH (NOLOCK)
+	INNER JOIN tblFreeFormValues FV WITH (NOLOCK) ON F.FreeFormID = FV.FreeFormID 
 	LEFT JOIN tblDealers D WITH (NOLOCK) ON F.DealerID = D.DealerID
 	LEFT JOIN tblLenders L WITH (NOLOCK) ON F.LenderID = L.LenderID
 	LEFT JOIN tblLendersBranches LB WITH (NOLOCK) ON F.LendersBranchID = LB.LendersBranchID
 
 WHERE
-	F.FreeFormID = FV.FreeFormID
-	AND	Object = 'MESSAGING'
+	--F.FreeFormID = FV.FreeFormID
+	--AND	
+	Object = 'MESSAGING'
 	AND	Property='CONVERSATION'
 
 	--AND F.DealerID *= D.DealerID
@@ -24120,10 +23926,10 @@ SELECT
 
 FROM
 	tblLoanApp_FundingChecklist_Applicant		FCL_A WITH (NOLOCK)
-	JOIN tblLoanApp_Applicant					LA_A WITH (NOLOCK) ON (FCL_A.LoanApp_ApplicantID = LA_A.LoanApp_ApplicantID)
+	INNER JOIN tblLoanApp_Applicant				LA_A WITH (NOLOCK) ON (FCL_A.LoanApp_ApplicantID = LA_A.LoanApp_ApplicantID)
 
-	LEFT tblLoanApp_CurrAddress					LA_CA WITH (NOLOCK) ON (FCL_A.LoanApp_ApplicantID = LA_CA.LoanApp_ApplicantID)
-	LEFT tblLoanApp_CurrEmployer				LA_CE WITH (NOLOCK) ON (FCL_A.LoanApp_ApplicantID = LA_CE.LoanApp_ApplicantID)
+	LEFT JOIN tblLoanApp_CurrAddress			LA_CA WITH (NOLOCK) ON (FCL_A.LoanApp_ApplicantID = LA_CA.LoanApp_ApplicantID)
+	LEFT JOIN tblLoanApp_CurrEmployer			LA_CE WITH (NOLOCK) ON (FCL_A.LoanApp_ApplicantID = LA_CE.LoanApp_ApplicantID)
 --	tblLoanApp_Applicant						LA_A WITH (NOLOCK)
 --	tblLoanApp_CurrAddress						LA_CA WITH (NOLOCK),
 --	tblLoanApp_CurrEmployer						LA_CE WITH (NOLOCK)
@@ -26986,75 +26792,6 @@ SET ANSI_NULLS ON
 GO
 
 /****** Object:  View dbo.viewPartnerFieldDefinitions    Script Date: 7/31/2024 12:57:18 PM ******/
-/*
-	CREATE VIEW viewPartnerFieldsMissingDefinitions AS
-		SELECT TOP 100 PERCENT
-				[PartnerToolID]						= [PDE].[PartnerToolID],
-				[Partner]									= LEFT(MIN([Partner].[ShortName]), 20),
-				[Field]										= LEFT([PDE].[Field], 30),
-				[Usage]										= COUNT([PDE].[PartnerDataElementID]),
-				[Usage_LoanAppID]					= (SELECT COUNT(*) FROM [tblPartnerDataElement] [PDE_Inner] WITH (NOLOCK)  WHERE [PDE_Inner].[PartnerToolID] = [PDE].[PartnerToolID] AND [PDE_Inner].[Field] = [PDE].[Field] AND [PDE_Inner].[LoanAppID] <> 0),
-				[Usage_LoanApp_BidID]			= (SELECT COUNT(*) FROM [tblPartnerDataElement] [PDE_Inner] WITH (NOLOCK)  WHERE [PDE_Inner].[PartnerToolID] = [PDE].[PartnerToolID] AND [PDE_Inner].[Field] = [PDE].[Field] AND [PDE_Inner].[LoanApp_BidID] <> 0),
-
-				[Usage_LenderID]					= (SELECT COUNT(*) FROM [tblPartnerDataElement] [PDE_Inner] WITH (NOLOCK)  WHERE [PDE_Inner].[PartnerToolID] = [PDE].[PartnerToolID] AND [PDE_Inner].[Field] = [PDE].[Field] AND [PDE_Inner].[LenderID] <> 0),
-				[Usage_LendersBranchID]		= (SELECT COUNT(*) FROM [tblPartnerDataElement] [PDE_Inner] WITH (NOLOCK)  WHERE [PDE_Inner].[PartnerToolID] = [PDE].[PartnerToolID] AND [PDE_Inner].[Field] = [PDE].[Field] AND [PDE_Inner].[LendersBranchID] <> 0),
-				[Usage_DealerID]					= (SELECT COUNT(*) FROM [tblPartnerDataElement] [PDE_Inner] WITH (NOLOCK)  WHERE [PDE_Inner].[PartnerToolID] = [PDE].[PartnerToolID] AND [PDE_Inner].[Field] = [PDE].[Field] AND [PDE_Inner].[DealerID] <> 0),
-
-				[Oldest]						= MIN([PDE].[CreateDateTime]),
-				[Newest]						= MAX([PDE].[CreateDateTime])
-		FROM
-						[tblPartnerDataElement]				[PDE]				WITH (NOLOCK)
-			JOIN	[tblPartnerTools]							[Partner]		WITH (NOLOCK) ON [Partner].[PartnerToolID]		= [PDE].[PartnerToolID]		AND		[Partner].[Active] = 1
-		WHERE
-					NOT [PDE].[Field] IN ('Activation Policy', 'SEQUENCE')
-			AND	NOT EXISTS(SELECT * FROM [tblPartnerElementDefinition] [PED] WITH (NOLOCK) WHERE [PED].[PartnerToolID] = [PDE].[PartnerToolID] AND [PED].[Field] = [PDE].[Field])
-		GROUP BY
-			[PDE].[PartnerToolID],
-			[PDE].[Field]
-		HAVING
-					COUNT([PDE].[PartnerDataElementID]) > 3
-			AND MAX([PDE].[CreateDateTime])					> DATEADD(d, -30, GETDATE())
-		ORDER BY
-			[PDE].[PartnerToolID],
-			[PDE].[Field]
-		Xgo
-*/
-
-/*
-	INSERT INTO tblPartnerElementDefinition
-		([PartnerToolID], [Field], [Active], [Caption], [ValueType], [KeyedFromLoanAppID], [KeyedFromLoanApp_BidID], [KeyedFromLenderID], [KeyedFromLendersBranchID], [KeyedFromDealerID], [KeyedFromAffiliateID], [ShowOnDealerAdmin], [ShowOnLenderAdmin], [ShowOnLendersBranchAdmin], [ShowOnAffiliateAdmin], [ShowOnLenderDealerConsoleAdmin])
-			SELECT
-				[PartnerToolID]											= [Field].[PartnerToolID],
-				[Field]															= [Field].[Field],
-				[Active]														= 1,
-				[Caption]														= RTRIM(LTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE('_' + [Field].[Field] + '_', '_FUNDING_', '_Funding_'), '_SENDING_', '_Sending_'), '_PARTNER_', '_Partner_'), '_LOAN_', '_Loan_'), '_DATE_', '_Date_'), '_ERROR_', '_Error_'), '_NOTIFY_', '_Notify_'), '_CLASS_', '_Class_'), '_NUMBER_', '_Number_'), '_SENT_', '_Sent_'),
-					'_', ' '))),
-				[ValueType]													= 'OTHER',
-				[KeyedFromLoanAppID]								= CASE WHEN [Field].[Usage_LoanAppID] > 0 THEN 1 ELSE 0 END,
-				[KeyedFromLoanApp_BidID]						= CASE WHEN [Field].[Usage_LoanAppID] > 0 THEN 1 ELSE 0 END,
-				[KeyedFromLenderID]									= CASE WHEN [Field].[Usage_LenderID] > 0 THEN 1 ELSE 0 END,
-				[KeyedFromLendersBranchID]					= CASE WHEN [Field].[Usage_LendersBranchID] > 0 THEN 1 ELSE 0 END,
-				[KeyedFromDealerID]									= CASE WHEN [Field].[Usage_DealerID] > 0 THEN 1 ELSE 0 END,
-				[KeyedFromAffiliateID]							= 0,
-				[ShowOnDealerAdmin]									= 0,
-				[ShowOnLenderAdmin]									= 0,
-				[ShowOnLendersBranchAdmin]					= 0,
-				[ShowOnAffiliateAdmin]							= 0,
-				[ShowOnLenderDealerConsoleAdmin]		= 0
-			FROM
-				[viewPartnerFieldsMissingDefinitions]	[Field] WITH (NOLOCK)
-	;
-*/
-
-/*
-		SELECT
-			*
-			--
-		FROM
-			viewPartnerFieldsMissingDefinitions
-			;
-*/
-
 	CREATE VIEW viewPartnerFieldDefinitions AS
 		SELECT
 			[PartnerToolID]									= [PED].[PartnerToolID],
@@ -27508,7 +27245,7 @@ CREATE VIEW viewPartnerToolsValuationServices AS
 	WHERE
 		PTT.Type = 'VALUATION'
 	ORDER BY
-		PT.ToolDisplayName
+		ISNULL(NULLIF(PT.DisplayName, ''), PT.ShortName)
 
 
 
@@ -30011,10 +29748,18 @@ GO
 
 CREATE VIEW view_FundingConsole
 AS
-SELECT     TOP 100 PERCENT view_LoanApps_Bids.*, view_Dealers.Address AS DealerAddress, view_Dealers.ZIP AS DealerZIP, view_Dealers.Telephone AS DealerTelephone,
-                      view_Dealers.Fax AS DealerFax, view_Dealers.Contact AS DealerContact, tblLoanApps.VEHICLE_RETAIL,
-                      tblLoanApps.VEHICLE_RETAIL_ADJUSTED, tblLoanApps.VEHICLE_WHOLESALE, tblLoanApps.VEHICLE_WHOLESALE_ADJUSTED,
-                      view_Dealers.DealerType
+SELECT     TOP 100 PERCENT 
+	view_LoanApps_Bids.*, 
+	view_Dealers.Address AS DealerAddress, 
+	view_Dealers.ZIP AS DealerZIP, 
+	view_Dealers.Telephone AS DealerTelephone,
+    view_Dealers.Fax AS DealerFax, 
+	view_Dealers.Contact AS DealerContact, 
+	--tblLoanApps.VEHICLE_RETAIL,
+    --tblLoanApps.VEHICLE_RETAIL_ADJUSTED, 
+	--tblLoanApps.VEHICLE_WHOLESALE, 
+	--tblLoanApps.VEHICLE_WHOLESALE_ADJUSTED,
+    view_Dealers.DealerType
 FROM         view_LoanApps_Bids INNER JOIN
                       view_Dealers ON view_LoanApps_Bids.DealerID = view_Dealers.DealerID INNER JOIN
                       tblLoanApps ON view_LoanApps_Bids.LoanAppID = tblLoanApps.LoanAppID
@@ -34722,43 +34467,43 @@ CREATE VIEW viewB2B_BidFundingStatusEX AS
 			ELSE NULL END),
 
 		Funded_Date						= CASE
-			WHEN Bid_Funded.Funded_Date				IS NULL	AND	BFS_Funded.StatusUpdateDateTime	IS NULL															THEN	NULL
-			WHEN Bid_Funded.Funded_Date				IS NULL																										THEN	BFS_Funded.StatusUpdateDateTime
-			WHEN 												BFS_Funded.StatusUpdateDateTime	IS NULL															THEN	Bid_Funded.Funded_Date
-			WHEN Bid_Funded.Funded_Date				>=			BFS_Funded.StatusUpdateDateTime																	THEN	Bid_Funded.Funded_Date
-			ELSE BFS_Funded.StatusUpdateDateTime END,
+			WHEN Bid_Funded.Funded_Date				IS NULL	AND	BFS_Funded.StatusDateTime	IS NULL															THEN	NULL
+			WHEN Bid_Funded.Funded_Date				IS NULL																									THEN	BFS_Funded.StatusDateTime
+			WHEN 												BFS_Funded.StatusDateTime	IS NULL															THEN	Bid_Funded.Funded_Date
+			WHEN Bid_Funded.Funded_Date				>=			BFS_Funded.StatusDateTime																	THEN	Bid_Funded.Funded_Date
+			ELSE BFS_Funded.StatusDateTime END,
 
 		Funded_Date_Source				= CONVERT(VARCHAR(20), CASE
-			WHEN Bid_Funded.Funded_Date				IS		NULL		AND	BFS_Funded.StatusUpdateDateTime		IS		NULL									THEN	NULL
-			WHEN Bid_Funded.Funded_Date				IS		NULL		AND BFS_Funded.StatusUpdateDateTime		IS	NOT	NULL									THEN	'BFS_FUNDED'
-			WHEN Bid_Funded.Funded_Date				IS	NOT	NULL		AND	BFS_Funded.StatusUpdateDateTime		IS		NULL									THEN	'BID_FUNDED'
-			WHEN Bid_Funded.Funded_Date				>=					BFS_Funded.StatusUpdateDateTime															THEN	'BID_FUNDED'
+			WHEN Bid_Funded.Funded_Date				IS		NULL		AND	BFS_Funded.StatusDateTime		IS		NULL									THEN	NULL
+			WHEN Bid_Funded.Funded_Date				IS		NULL		AND BFS_Funded.StatusDateTime		IS	NOT	NULL									THEN	'BFS_FUNDED'
+			WHEN Bid_Funded.Funded_Date				IS	NOT	NULL		AND	BFS_Funded.StatusDateTime		IS		NULL									THEN	'BID_FUNDED'
+			WHEN Bid_Funded.Funded_Date				>=					BFS_Funded.StatusDateTime															THEN	'BID_FUNDED'
 																																							ELSE	'BFS_FUNDED'	END	),
 		BidFundingStatus 				= CASE
-			WHEN BFS_Funded.StatusUpdateDateTime	IS NOT NULL	THEN	'FUNDED'
-			WHEN BFS_Rejected.StatusUpdateDateTime	IS NOT NULL	THEN	'REJECTED'
-			WHEN BFS_Received.StatusUpdateDateTime	IS NOT NULL	THEN	'RECEIVED'
+			WHEN BFS_Funded.StatusDateTime	IS NOT NULL	THEN	'FUNDED'
+			WHEN BFS_Rejected.StatusDateTime	IS NOT NULL	THEN	'REJECTED'
+			WHEN BFS_Received.StatusDateTime	IS NOT NULL	THEN	'RECEIVED'
 			WHEN Bid_Funded.Funded_Date				IS NOT NULL	THEN	'FUNDED'
 			ELSE '' END,
 
 		LastStatus_UpdateDateTime		= CASE
-			WHEN BFS_Funded.StatusUpdateDateTime	IS NOT NULL	AND	LastStatus.UpdateDateTime IS NOT NULL	AND BFS_Funded.StatusUpdateDateTime		>= LastStatus.UpdateDateTime	THEN BFS_Funded.StatusUpdateDateTime
-			WHEN BFS_Rejected.StatusUpdateDateTime	IS NOT NULL	AND	LastStatus.UpdateDateTime IS NOT NULL	AND BFS_Rejected.StatusUpdateDateTime	>= LastStatus.UpdateDateTime	THEN BFS_Rejected.StatusUpdateDateTime
-			WHEN BFS_Received.StatusUpdateDateTime	IS NOT NULL	AND	LastStatus.UpdateDateTime IS NOT NULL	AND BFS_Received.StatusUpdateDateTime	>= LastStatus.UpdateDateTime	THEN BFS_Received.StatusUpdateDateTime
+			WHEN BFS_Funded.StatusDateTime	IS NOT NULL	AND	LastStatus.UpdateDateTime IS NOT NULL	AND BFS_Funded.StatusDateTime		>= LastStatus.UpdateDateTime	THEN BFS_Funded.StatusDateTime
+			WHEN BFS_Rejected.StatusDateTime	IS NOT NULL	AND	LastStatus.UpdateDateTime IS NOT NULL	AND BFS_Rejected.StatusDateTime	>= LastStatus.UpdateDateTime	THEN BFS_Rejected.StatusDateTime
+			WHEN BFS_Received.StatusDateTime	IS NOT NULL	AND	LastStatus.UpdateDateTime IS NOT NULL	AND BFS_Received.StatusDateTime	>= LastStatus.UpdateDateTime	THEN BFS_Received.StatusDateTime
 			WHEN 													LastStatus.UpdateDateTime IS NOT NULL																			THEN LastStatus.UpdateDateTime
 			WHEN Bid_Funded.UpdateDateTime			IS NOT NULL		THEN Bid_Funded.UpdateDateTime
 			ELSE Bid.UpdateDateTime END,
 
 		StatusUpdateDateTime 			= CASE
-			WHEN BFS_Funded.StatusUpdateDateTime	IS NOT NULL	THEN	BFS_Funded.StatusUpdateDateTime
-			WHEN BFS_Rejected.StatusUpdateDateTime	IS NOT NULL	THEN	BFS_Rejected.StatusUpdateDateTime
-			WHEN BFS_Received.StatusUpdateDateTime	IS NOT NULL	THEN	BFS_Received.StatusUpdateDateTime
+			WHEN BFS_Funded.StatusDateTime	IS NOT NULL	THEN	BFS_Funded.StatusDateTime
+			WHEN BFS_Rejected.StatusDateTime	IS NOT NULL	THEN	BFS_Rejected.StatusDateTime
+			WHEN BFS_Received.StatusDateTime	IS NOT NULL	THEN	BFS_Received.StatusDateTime
 			ELSE NULL END,
 
 		StatusUpdateUser 				= ISNULL(CASE
-			WHEN BFS_Funded.StatusUpdateUser	IS NOT NULL	THEN	BFS_Funded.StatusUpdateUser
-			WHEN BFS_Rejected.StatusUpdateUser	IS NOT NULL	THEN	BFS_Rejected.StatusUpdateUser
-			WHEN BFS_Received.StatusUpdateUser	IS NOT NULL	THEN	BFS_Received.StatusUpdateUser
+			WHEN BFS_Funded.StatusUser	IS NOT NULL	THEN	BFS_Funded.StatusUser
+			WHEN BFS_Rejected.StatusUser	IS NOT NULL	THEN	BFS_Rejected.StatusUser
+			WHEN BFS_Received.StatusUser	IS NOT NULL	THEN	BFS_Received.StatusUser
 			ELSE '' END, ''),
 
 		LastSent_Date					= (SELECT	MAX(LS.FundingSent)	FROM
@@ -34806,16 +34551,16 @@ CREATE VIEW viewB2B_BidFundingStatusEX AS
 			WHEN Bid_Funded.LoanApp_BidID		IS NOT NULL		THEN	'BID_FUNDED'
 			ELSE '' END),
 
-		Received_StatusDate				= BFS_Received.StatusUpdateDateTime,
-		Received_StatusUser				= ISNULL(BFS_Received.StatusUpdateUser,							''	),
+		Received_StatusDate				= BFS_Received.StatusDateTime,
+		Received_StatusUser				= ISNULL(BFS_Received.StatusUser,							''	),
 		Received_LoanApp_BidID			= BFS_Received.LoanApp_BidID,
 
-		Rejected_StatusDate				= BFS_Rejected.StatusUpdateDateTime,
-		Rejected_StatusUser				= ISNULL(BFS_Rejected.StatusUpdateUser,							''	),
+		Rejected_StatusDate				= BFS_Rejected.StatusDateTime,
+		Rejected_StatusUser				= ISNULL(BFS_Rejected.StatusUser,							''	),
 		Rejected_LoanApp_BidID			= BFS_Rejected.LoanApp_BidID,
 
-		Funded_StatusDate				= BFS_Funded.StatusUpdateDateTime,
-		Funded_StatusUser				= ISNULL(BFS_Funded.StatusUpdateUser,							''	),
+		Funded_StatusDate				= BFS_Funded.StatusDateTime,
+		Funded_StatusUser				= ISNULL(BFS_Funded.StatusUser,							''	),
 		Funded_LoanApp_BidID			= BFS_Funded.LoanApp_BidID
 
 	FROM
@@ -34840,9 +34585,9 @@ CREATE VIEW viewB2B_BidFundingStatusEX AS
 		LEFT	JOIN	tblLoanApp_Underwriting					Underwriting			WITH (NOLOCK)		ON Underwriting.LoanAppID		= Bid.LoanAppID				AND Underwriting.LenderID		=	Lender.LenderID
 		LEFT	JOIN	tblLoanApp_Bids_LastStatus				LastStatus 				WITH (NOLOCK)		ON Bid.LoanApp_BidID			= LastStatus.LoanApp_BidID
 
-		LEFT	JOIN	viewBidFundingStatus					BFS_Received			WITH (NOLOCK)		ON BFS_Received.LoanAppID		= Bid.LoanAppID				AND	BFS_Received.LenderID		=	Lender.LenderID	AND	BFS_Received.BidFundingStatus	= 'RECEIVED'
-		LEFT	JOIN	viewBidFundingStatus					BFS_Funded				WITH (NOLOCK)		ON BFS_Funded.LoanAppID			= Bid.LoanAppID				AND	BFS_Funded.LenderID			=	Lender.LenderID	AND	BFS_Funded.BidFundingStatus		= 'FUNDED'
-		LEFT	JOIN	viewBidFundingStatus					BFS_Rejected			WITH (NOLOCK)		ON BFS_Rejected.LoanAppID		= Bid.LoanAppID				AND	BFS_Rejected.LenderID		=	Lender.LenderID	AND	BFS_Rejected.BidFundingStatus	= 'REJECTED'
+		LEFT	JOIN	viewBidFundingStatus					BFS_Received			WITH (NOLOCK)		ON BFS_Received.LoanAppID		= Bid.LoanAppID				AND	BFS_Received.LenderID		=	Lender.LenderID	AND	BFS_Received.FundingStatus	= 'RECEIVED'
+		LEFT	JOIN	viewBidFundingStatus					BFS_Funded				WITH (NOLOCK)		ON BFS_Funded.LoanAppID			= Bid.LoanAppID				AND	BFS_Funded.LenderID			=	Lender.LenderID	AND	BFS_Funded.FundingStatus		= 'FUNDED'
+		LEFT	JOIN	viewBidFundingStatus					BFS_Rejected			WITH (NOLOCK)		ON BFS_Rejected.LoanAppID		= Bid.LoanAppID				AND	BFS_Rejected.LenderID		=	Lender.LenderID	AND	BFS_Rejected.FundingStatus	= 'REJECTED'
 	WHERE
 		Bid.LoanApp_BidID	= ISNULL(Bid_Funded.LoanApp_BidID, ISNULL(BFS_Funded.LoanApp_BidID, ISNULL(BFS_Rejected.LoanApp_BidID, ISNULL(BFS_Received.LoanApp_BidID, -1))))
 		--AND Underwriting.CreateDateTime >= '2014-01-01'
@@ -35679,7 +35424,7 @@ GO
 SET ANSI_NULLS ON 
 GO
 
-SET QUOTED_IDENTIFIER OFF 
+SET QUOTED_IDENTIFIER ON 
 GO
 SET ANSI_NULLS ON 
 GO
@@ -41845,9 +41590,12 @@ CREATE VIEW viewB2B_Messaging_Pending AS
 		PartnerToolsTriggerID		= Msg_Trigger.PartnerToolsTriggerID,
 		TryCount					= PCR.TryCount,
 		ErrorCount					= PCR.ErrorCount,
-		SuccessDateTime				= PCR.SuccessDateTime,
-		FirstTryDateTime			= PCR.FirstTryDateTime,
-		LastTryDateTime				= PCR.LastTryDateTime
+		SuccessDateTime				= PCR.[TS_Success],
+		FirstTryDateTime			= PCR.[TS_FirstAttempt],
+		LastTryDateTime				= PCR.[TS_LastAttempt]
+
+
+
 	FROM
 				tblPartnerCommentLog_Receipt	PCR				WITH (NOLOCK)
 		JOIN	tblLoanApp_Bids_CommentLog		Msg				WITH (NOLOCK) ON Msg.LoanApp_Bids_CommentLogID	= PCR.LoanApp_Bids_CommentLogID
@@ -41856,10 +41604,10 @@ CREATE VIEW viewB2B_Messaging_Pending AS
 		JOIN	tblPartnerTools					Partner			WITH (NOLOCK) ON Partner.PartnerToolID			= PCR.PartnerToolID					AND	Partner.Active = 1
 		JOIN	tblPartnerToolsTriggers			Msg_Trigger		WITH (NOLOCK) ON Msg_Trigger.PartnerToolID		= Partner.PartnerToolID				AND	Msg_Trigger.Type	= 'SEND_MESSAGING'		AND Msg_Trigger.Active = 1
 	WHERE
-			SuccessDateTime										IS	NULL
+			[TS_Success]										IS	NULL
 		AND	TryCount											<	100
 		AND	ErrorCount											<	25
-		AND ISNULL(DATEDIFF(mi,LastTryDateTime,GETDATE()),10)	>=	5
+		AND ISNULL(DATEDIFF(mi,[TS_LastAttempt],GETDATE()),10)	>=	5
 		AND NOT EXISTS(SELECT * FROM tblPartnerCommentLog_Lock PCR_Lock WITH (NOLOCK) WHERE PCR_Lock.LoanApp_Bids_CommentLogID = PCR.LoanApp_Bids_CommentLogID AND PCR_Lock.PartnerToolID = PCR.PartnerToolID AND PCR_Lock.ExpireDateTime < GETDATE())
 	ORDER BY
 		PCR.TryCount,
@@ -50476,13 +50224,13 @@ CREATE VIEW [dbo].[viewLoanRouting_PartnerStateDealerType] AS
 	GROUP BY
 		Routing.Routing_StateDealerTypeID
 	ORDER BY
-		Lender.LenderID,
-		Routing.Score,
-		Branch.LendersBranchID,
-		Dealer.DealerID,
-		Partner.PartnerToolID,
-		Routing.Name,
-		Routing.Description
+		LenderID,
+		Score,
+		LendersBranchID,
+		DealerID,
+		PartnerToolID,
+		Name,
+		Description
 
 
 
@@ -74830,9 +74578,10 @@ SELECT
 	LastUpdate = ISNULL(PF.UpdateDateTime, P.UpdateDateTime)
 
 FROM
-  tblPrograms P        WITH (NOLOCK)
+  tblPrograms P					 WITH (NOLOCK)
+  JOIN tblLenders L				 WITH (NOLOCK) ON P.LenderID = L.LenderID	
   LEFT JOIN tblProgramFilter PF  WITH (NOLOCK) ON P.ProgramID = PF.ProgramID
-  JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
+  
 
 WHERE
   --P.ProgramID *= PF.ProgramID
@@ -75515,7 +75264,7 @@ CREATE VIEW viewBidsAutomationPending_Outer_Outer AS
 		[Program].[HasAutoOfferPrograms]
 
 	ORDER BY
-		[Bid].[LoanAppID],
+		LoanApp_BidID,
 		[Lender].[LenderID]
 
 
@@ -75744,9 +75493,10 @@ CREATE VIEW viewFilterGen_ProgramFilters_2013_09_05 AS
 		StipulationsCount			= (SELECT COUNT(*) FROM tblProgramFilterStipulations      WITH (NOLOCK)  WHERE ProgramFilterID = PF.ProgramFilterID),
 		LastUpdate					= ISNULL(PF.UpdateDateTime, P.UpdateDateTime)	
 	FROM
-		tblPrograms P        WITH (NOLOCK)
-		LEFT JOIN tblProgramFilter PF  WITH (NOLOCK ON P.ProgramID = PF.ProgramID
-		JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
+		tblPrograms P					WITH (NOLOCK)
+		INNER JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
+		LEFT JOIN tblProgramFilter PF	WITH (NOLOCK) ON P.ProgramID = PF.ProgramID
+		
 	
 	WHERE
 		--P.ProgramID *= PF.ProgramID
@@ -75907,8 +75657,9 @@ CREATE VIEW viewFilterGen_ProgramFilters_BACKUP_2014_04_11 AS
 	
 	FROM
 		tblPrograms P        WITH (NOLOCK)
+		INNER JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
 		LEFT JOIN tblProgramFilter PF  WITH (NOLOCK) ON P.ProgramID = PF.ProgramID
-		JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
+		
 	
 	WHERE
 		--P.ProgramID *= PF.ProgramID
@@ -76092,8 +75843,9 @@ SELECT
 
 FROM
   tblPrograms P        WITH (NOLOCK)
+  INNER JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
   LEFT JOIN tblProgramFilter PF  WITH (NOLOCK) ON P.ProgramID = PF.ProgramID
-  JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
+  
 
 WHERE
 	--P.ProgramID *= PF.ProgramID
@@ -76281,8 +76033,9 @@ SELECT
 
 FROM
   tblPrograms P        WITH (NOLOCK)
+  INNER JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
   LEFT JOIN tblProgramFilter PF  WITH (NOLOCK) ON P.ProgramID = PF.ProgramID
-  JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
+  
 
 WHERE
 	--P.ProgramID *= PF.ProgramID
@@ -76465,8 +76218,9 @@ SELECT
 
 FROM
   tblPrograms P        WITH (NOLOCK)
+  INNER JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
   LEFT JOIN tblProgramFilter PF  WITH (NOLOCK) ON P.ProgramID = PF.ProgramID
-  JOIN tblLenders L         WITH (NOLOCK) ON P.LenderID = L.LenderID
+  
 
 WHERE
 	--P.ProgramID *= PF.ProgramID
@@ -76548,8 +76302,9 @@ SELECT
 
 FROM
   tblPrograms P WITH (NOLOCK)
+  INNER JOIN tblLenders L WITH (NOLOCK) ON  P.LenderID = L.LenderID
   LEFT JOIN tblProgramFilter PF WITH (NOLOCK) ON P.ProgramID = PF.ProgramID
-  JOIN tblLenders L WITH (NOLOCK) ON  P.LenderID = L.LenderID
+  
 
 WHERE
 	--P.ProgramID *= PF.ProgramID
@@ -77580,10 +77335,14 @@ CREATE VIEW viewFilterGen_ProgramFilters_New_2014_04_11 AS
 	*/
 
 	ORDER BY
-		PFI.LenderName,
-		PFI.LenderID,
-		PFI.ProgramID,
-		PFI.ProgramFilterID	
+		LenderName,
+		LenderID,
+		ProgramID,
+		ProgramFilterID
+		--PFI.LenderName,
+		--PFI.LenderID,
+		--PFI.ProgramID,
+		--PFI.ProgramFilterID	
 
 	--	AND	NoCredit		= 0
 	--	AND	NoCredit		= 1
